@@ -1,0 +1,11 @@
+{
+  "name": "2-how-node-works",
+  "version": "1.0.0",
+  "description": "",
+  "main": "3-then.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
