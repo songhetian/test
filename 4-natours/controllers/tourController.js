@@ -1,120 +1,195 @@
-const fs = require('fs');
-const express = require('express');
+const Tour = require('./../models/tourModel');
 
-const app = express();
-
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
-);
-exports.checkID = (req, res, next, val) => {
-  const tour = tours.find(el => el.id === +val);
-  if (!tour) {
-    return res.status(404).json({
-      status: 'Filed not found',
-      message: 'No tour found'
-    });
-  }
-  res.tour = tour;
+exports.getTopTours = (req, res, next) => {
+  req.query.limit = 5;
   next();
 };
 
-exports.checkBody = (req, res, next) => {
-  const data = req.body;
-  if (!data.name || !data.price) {
-    return res.status(404).json({
-      status: 'Filed not found',
-      message: 'No tour found'
+exports.getAllTours = async (req, res) => {
+  try {
+    const query = Tour.find();
+    const { page, limit } = req.query;
+
+    //query.select({name:1,price:1,difficulty:1,ratingsQuantity:1,ratingsAverage:1,secretTour:1});
+    //query.sort("-price");
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query.select(fields);
+    }
+    query.sort('-price -ratingsQuantity');
+    const offset = (page - 1) * limit;
+    query.skip(offset).limit(+limit);
+
+    const tours = await query;
+
+    res.status(200).json({
+      status: 'Success',
+      results: tours.length,
+      message: '获取成功',
+      data: tours
     });
-  }
-  console.log(req.body);
-  next();
-};
-
-exports.getAllTours = (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      tours: tours
-    }
-  });
-};
-
-exports.getTour = (req, res) => {
-  const { tour } = res;
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: tour
-    }
-  });
-};
-
-exports.creatTour = (req, res) => {
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = Object.assign({ id: newId }, req.body);
-  tours.push(newTour);
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tours),
-    err => {
-      res.status(201).json({
-        message: 'success',
-        data: {
-          data: newTour
-        }
-      });
-    }
-  );
-};
-
-exports.updateTour = (req, res) => {
-  const { tour } = res;
-  for (const key in req.body) {
-    tour[key] = req.body[key];
-  }
-  tours.filter(el => {
-    if (el.id === id) {
-      return (el = tour);
-    }
-  });
-
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tours),
-    err => {
-      console.log('write success');
-    }
-  );
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tours: tours
-    }
-  });
-};
-
-exports.deleteTour = (req, res) => {
-  const { id } = res.tour;
-  const index = tours.findIndex(el => el.id === id);
-  if (index === -1) {
+  } catch (err) {
     res.status(404).json({
-      status: 'Filled',
-      message: 'No tour found!'
+      status: 'Filed',
+      message: err.message
     });
   }
-  tours.splice(index, 1);
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tours),
-    err => {
-      console.log('write success');
-    }
-  );
-  res.status(200).json({
-    status: 'success',
-    data: {
-      index: index
-    }
-  });
+};
+
+exports.getTour = async (req, res) => {
+  try {
+    const tour = await Tour.findById(req.params.id, { _id: 0, secretTour: 1 });
+    res.status(200).json({
+      status: 'Success',
+      message: '获取成功',
+      data: tour
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'Filed',
+      message: err.message
+    });
+  }
+};
+
+exports.creatTour = async (req, res) => {
+  // const newId = tours[tours.length - 1].id + 1;
+  // const newTour = Object.assign({ id: newId }, req.body);
+  try {
+    const newTour = await Tour.create(req.body);
+    res.status(200).json({
+      status: 'Success',
+      message: '创建成功',
+      data: newTour
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'Filed',
+      message: err.message
+    });
+  }
+};
+
+exports.updateTour = async (req, res) => {
+  try {
+    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true``
+    });
+    res.status(200).json({
+      status: 'Success',
+      message: '更新成功',
+      data: tour
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'Filed',
+      message: err.message
+    });
+  }
+};
+
+exports.deleteTour = async (req, res) => {
+  try {
+    await Tour.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      status: 'Success',
+      message: '删除成功'
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'Filed',
+      message: err.message
+    });
+  }
+};
+
+exports.getStatusTours = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } }
+      },
+      {
+        $group: {
+          _id: { $toUpper: '$difficulty' },
+          numTours: { $sum: 1 },
+          maxPrice: { $max: '$price' },
+          minPrice: { $min: '$price' },
+          avgPrice: { $avg: '$price' }
+        }
+      },
+      {
+        $sort: {
+          avgPrice: -1
+        }
+      },
+      {
+        $match: { _id: { $ne: 'EASY' } }
+      },
+      {
+        $project: {
+          _id: 0
+        }
+      }
+    ]);
+    res.status(200).json({
+      status: 'Success',
+      message: '获取成功',
+      data: stats
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'Filed',
+      message: err.message
+    });
+  }
+};
+//获取排序
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const { year } = req.params;
+
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates' //解析数组变为单条
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-1-1`),
+            $lte: new Date(`${year}-12-31`)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          numTourStart: { $sum: 1 },
+          tours: { $push: '$name' }
+        }
+      },
+      {
+        $sort: { numTourStart: -1 }
+      },
+      {
+        $addFields: { month: '$_id' }
+      },
+      {
+        $project: { _id: 0 }
+      }
+    ]);
+
+    res.status(200).json({
+      status: 'Success',
+      message: '获取成功',
+      requests: plan.length,
+      data: plan
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'Filed',
+      message: err.message
+    });
+  }
 };

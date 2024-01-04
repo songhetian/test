@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
+  "engines": {
+    "node": ">=15.0.0"
+  },
   "scripts": {
     "start:dev": "nodemon servers.js",
-    "start:prod": "cross-env NODE_ENV=production nodemon servers.js"
+    "start:prod": "cross-env NODE_ENV=production nodemon servers.js",
+    "debug": "nodemon --inspect-brk server.js"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +19,9 @@
     "express": "^4.18.2",
     "mongoose": "^5.13.21",
     "morgan": "^1.10.0",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "slugify": "^1.6.6",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
@@ -27,6 +33,7 @@
     "eslint-plugin-node": "^8.0.1",
     "eslint-plugin-prettier": "^3.0.1",
     "eslint-plugin-react": "^7.12.4",
+    "ndb": "^1.1.5",
     "prettier": "^1.17.0"
   }
 }
