@@ -1,12 +1,12 @@
 const Tour = require('./../models/tourModel');
-
+const catchAsync = require('./../utils/catchAsync');
 exports.getTopTours = (req, res, next) => {
   req.query.limit = 5;
   next();
 };
 
-exports.getAllTours = async (req, res) => {
-  try {
+exports.getAllTours = catchAsync(async (req, res , next) => {
+
     const query = Tour.find();
     const { page, limit } = req.query;
 
@@ -28,50 +28,30 @@ exports.getAllTours = async (req, res) => {
       message: '获取成功',
       data: tours
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});
 
-exports.getTour = async (req, res) => {
-  try {
-    const tour = await Tour.findById(req.params.id, { _id: 0, secretTour: 1 });
+exports.getTour = catchAsync(async (req, res , next) => {
+  // const tour = await Tour.findById(req.params.id, { _id: 0, secretTour: 1 });
+   const tour = await Tour.findById(req.params.id);
     res.status(200).json({
       status: 'Success',
       message: '获取成功',
       data: tour
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});
 
-exports.creatTour = async (req, res) => {
+exports.creatTour = catchAsync(async (req,res , next) => {
   // const newId = tours[tours.length - 1].id + 1;
   // const newTour = Object.assign({ id: newId }, req.body);
-  try {
     const newTour = await Tour.create(req.body);
     res.status(200).json({
       status: 'Success',
       message: '创建成功',
       data: newTour
     });
-  } catch (err) {
-    res.status(400).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});
 
-exports.updateTour = async (req, res) => {
-  try {
+exports.updateTour = catchAsync(async (req, res , next) => {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true``
@@ -81,31 +61,17 @@ exports.updateTour = async (req, res) => {
       message: '更新成功',
       data: tour
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});
 
-exports.deleteTour = async (req, res) => {
-  try {
+exports.deleteTour = catchAsync(async (req, res , next) => {
     await Tour.findByIdAndDelete(req.params.id);
     res.status(200).json({
       status: 'Success',
       message: '删除成功'
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});
 
-exports.getStatusTours = async (req, res) => {
-  try {
+exports.getStatusTours =  catchAsync(async (req,res , next) => {
     const stats = await Tour.aggregate([
       {
         $match: { ratingsAverage: { $gte: 4.5 } }
@@ -138,16 +104,9 @@ exports.getStatusTours = async (req, res) => {
       message: '获取成功',
       data: stats
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});
 //获取排序
-exports.getMonthlyPlan = async (req, res) => {
-  try {
+exports.getMonthlyPlan = catchAsync( async (req, res , next) => {
     const { year } = req.params;
 
     const plan = await Tour.aggregate([
@@ -186,10 +145,4 @@ exports.getMonthlyPlan = async (req, res) => {
       requests: plan.length,
       data: plan
     });
-  } catch (err) {
-    res.status(404).json({
-      status: 'Filed',
-      message: err.message
-    });
-  }
-};
+});

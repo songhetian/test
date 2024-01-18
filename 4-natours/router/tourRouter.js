@@ -2,6 +2,7 @@ const fs = require('fs');
 const express = require('express');
 const router = express.Router();
 const tourController = require('../controllers/tourController');
+const tourValidator = require('./../validates/tour');
 
 //router.param('id',tourController.checkID);
 // router.use((req, res,next) => {
@@ -20,10 +21,10 @@ router.route('/get-tour-status')
 
 router.route('/')
   .get(tourController.getAllTours)
-  .post(tourController.creatTour);
+  .post(tourValidator.createTour,tourController.creatTour);
 
 router.route('/:id')
-  .get(tourController.getTour)
+  .get(tourValidator.getTours ,tourController.getTour)
   .patch(tourController.updateTour)
   .delete(tourController.deleteTour);
 
