@@ -41,28 +41,8 @@
 </div>
 </body>
 <script>
-  const d1 = document.querySelector("#d1");
-  const d2 = document.querySelector("#d2");
-  const d3 = document.querySelector("#d3");
-
-  d1.addEventListener("click",function(e){
-    alert(11111);
-  });
-  d2.addEventListener("click",function(e){
-    alert(22222);
-  });
-  d3.addEventListener("click",function(e){
-  //  e.preventDefault();
-    e.stopPropagation();
-    alert(333);
-  });
-  document.querySelector(".btn").forEach(el => el.addEventListener("click",function(e){
-    e.stopPropagation();
-  }));
-  document.querySelector(".button").addEventListener("click",function(e){
-     alert(e.target.textContent);
-  });
-
-
+  const abc = [1,2,3]
+   const obj = [...abc]
+  console.log(obj,abc);
 </script>
 </html>

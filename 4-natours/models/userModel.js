@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 
 
@@ -23,6 +24,7 @@ const bcrypt = require('bcryptjs');
         type : String,
         minLength : 8,
         required: [true,'请输入密码'],
+        select : false
       },
       passwordConfirm: {
         type : String,
@@ -32,9 +34,17 @@ const bcrypt = require('bcryptjs');
           validator: function(el) {
               return this.password === el
           },
-          messages: "两次密码不一致"
+          message: "确认密码不相同"
         }
-      }
+      },
+   role : {
+        type : String,
+        enum : ['user','guide','lead-guide','admin'],
+        default : 'user'
+   },
+   passwordChangeAt : Date,
+   passwordResetToken : String,
+   passwordResetExpires : Date
  });
 
  UserSchema.pre('save',async function(next) {
@@ -44,6 +54,33 @@ const bcrypt = require('bcryptjs');
    next();
  });
 
+ UserSchema.pre('save',function(next){
+   if(!this.isModified('password') || this.isNew)  next();
+   this.passwordChangeAt = Date.now();
+   next();
+ });
+
+ UserSchema.methods.correctPassword = async function (currentPassword,userPassword) {
+    return await bcrypt.compare(currentPassword,userPassword);
+ }
+
+UserSchema.methods.changedPasswordAfter =  function(JWTTimestamp) {
+   const changedTimestamp = parseInt(this.passwordChangeAt.getTime()/1000,10);
+  return JWTTimestamp < changedTimestamp;
+ }
+
+ UserSchema.methods.createPasswordResetToken = function() {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+
+      this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+      this.passwordResetExpires =  Date.now() + (10 * 60 * 1000);
+
+      return resetToken;
+ }
 
  const User = mongoose.model('User',UserSchema);
 

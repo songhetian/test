@@ -112,7 +112,6 @@ tourSchema.pre(/^find/, function(next) {
 //   next();
 // });
 tourSchema.post(/^find/, function(docs, next) {
-  console.log(docs);
   console.log('执行时间为:', `${Date.now() - this.start}ms`);
   next();
 });
